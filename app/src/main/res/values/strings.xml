@@ -7,7 +7,7 @@
     <string name="developed_text_string">Developed by skyguy126 and stirante.</string>
 
     <string-array name="save_loc_spinner_strings">
-        <item>SDCARD</item>
+        <item>INTERNAL STORAGE</item>
         <item>DOWNLOAD</item>
         <item>MUSIC</item>
     </string-array>

@@ -1,9 +1,13 @@
 package com.skyguy126.soundclouddownloader;
 
 import android.Manifest;
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Application;
 import android.app.DownloadManager;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -26,6 +30,8 @@ public class XposedMod implements IXposedHookLoadPackage {
 
     private static Object urlBuilder;
     private static Context context;
+
+    private static volatile Activity currentActivity;
 
     private static void download(Context context, String url, String name) {
 
@@ -94,7 +100,15 @@ public class XposedMod implements IXposedHookLoadPackage {
                         String url = (String) XposedHelpers.callMethod(urlBuilder, "buildHttpsStreamUrl", new Class[]{XposedHelpers.findClass("com.soundcloud.android.model.Urn", lpparam.classLoader)}, urn);
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                            Toast.makeText(context, "Write access denied, grant and retry!", Toast.LENGTH_LONG).show();
+                            new AlertDialog.Builder(XposedMod.currentActivity)
+                                    .setTitle("Write access denied")
+                                    .setMessage("Grant permission for writing to external storage and retry.")
+                                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            dialog.dismiss();
+                                        }
+                                    })
+                                    .show();
                         } else {
                             Toast.makeText(context, "Downloading...", Toast.LENGTH_SHORT).show();
                             XposedMod.download(context, url, name);
@@ -115,6 +129,13 @@ public class XposedMod implements IXposedHookLoadPackage {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                     XposedMod.context = (Context) param.args[0];
+                }
+            });
+
+            XposedHelpers.findAndHookMethod("android.app.Instrumentation", lpparam.classLoader, "newActivity", ClassLoader.class, String.class, Intent.class, new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    XposedMod.currentActivity = (Activity) param.getResult();
                 }
             });
 
