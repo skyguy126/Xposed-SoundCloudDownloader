@@ -1,16 +1,10 @@
 package com.skyguy126.soundclouddownloader;
 
-import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Application;
 import android.app.DownloadManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Environment;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -19,6 +13,7 @@ import java.io.File;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
@@ -27,15 +22,15 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 public class XposedMod implements IXposedHookLoadPackage {
 
     private static int saveLoc;
-
     private static Object urlBuilder;
-    private static Context context;
-
     private static volatile Activity currentActivity;
 
     private static void download(Context context, String url, String name) {
 
-        String fileName = name + ".mp3";
+        if (!Shared.validatePermissions(currentActivity))
+            return;
+
+        String fileName = Shared.validateFileName(name + ".mp3");
 
         File saveLoc;
 
@@ -50,8 +45,12 @@ public class XposedMod implements IXposedHookLoadPackage {
 
         XposedBridge.log("[SoundCloud Downloader] Download path: " + file.getPath());
 
-        if (file.exists())
-            file.delete();
+        if (file.exists()) {
+            Toast.makeText(context, "File already exists!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Toast.makeText(context, "Downloading...", Toast.LENGTH_SHORT).show();
 
         DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
 
@@ -76,66 +75,55 @@ public class XposedMod implements IXposedHookLoadPackage {
         if (!lpparam.packageName.equals("com.soundcloud.android"))
             return;
 
+        XposedBridge.log("[SoundCloud Downloader] Entry");
+
         XSharedPreferences prefs = new XSharedPreferences(Shared.PACKAGE_NAME, Shared.PREFS_FILE_NAME);
         XposedMod.saveLoc = prefs.getInt(Shared.PREFS_SPINNER_KEY, 1);
 
         XC_MethodHook downloadCatcher = new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+
                 MenuItem item = (MenuItem) param.args[0];
-                if (item.getTitle().toString().equalsIgnoreCase("Download")) {
+                if (!item.getTitle().toString().equalsIgnoreCase("Download"))
+                    return;
 
-                    Object track = XposedHelpers.getObjectField(param.thisObject, "track");
-                    Object urn = XposedHelpers.callMethod(track, "getUrn");
+                Object track = XposedHelpers.getObjectField(param.thisObject, "track");
+                Object urn = XposedHelpers.callMethod(track, "getUrn");
 
-                    String className = track.getClass().getName();
-                    String name;
+                String className = track.getClass().getName();
+                String name;
 
-                    if (!className.equals("com.soundcloud.android.playback.ui.PlayerTrackState"))
-                        name = (String) XposedHelpers.callMethod(track, "title");
-                    else
-                        name = (String) XposedHelpers.callMethod(track, "getTitle");
+                if (className.equals("com.soundcloud.android.playback.ui.PlayerTrackState"))
+                    name = (String) XposedHelpers.callMethod(track, "getTitle");
+                else
+                    name = (String) XposedHelpers.callMethod(track, "title");
 
-                    if (urlBuilder != null) {
-                        String url = (String) XposedHelpers.callMethod(urlBuilder, "buildHttpsStreamUrl", new Class[]{XposedHelpers.findClass("com.soundcloud.android.model.Urn", lpparam.classLoader)}, urn);
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                            new AlertDialog.Builder(XposedMod.currentActivity)
-                                    .setTitle("Write access denied")
-                                    .setMessage("Grant permission for writing to external storage and retry.")
-                                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            dialog.dismiss();
-                                        }
-                                    })
-                                    .show();
-                        } else {
-                            Toast.makeText(context, "Downloading...", Toast.LENGTH_SHORT).show();
-                            XposedMod.download(context, url, name);
-                        }
-
-                    } else {
-                        Toast.makeText(context, "Failed!", Toast.LENGTH_SHORT).show();
-                    }
-
-                    param.setResult(true);
+                if (urlBuilder != null) {
+                    String url = (String) XposedHelpers.callMethod(urlBuilder, "buildHttpsStreamUrl", new Class[]{XposedHelpers.findClass("com.soundcloud.android.model.Urn", lpparam.classLoader)}, urn);
+                    XposedMod.download(currentActivity, url, name);
+                } else {
+                    Toast.makeText(currentActivity, "Failed to get url!", Toast.LENGTH_SHORT).show();
                 }
+
+                param.setResult(true);
             }
         };
 
         try {
 
-            XposedHelpers.findAndHookMethod(Application.class, "attach", Context.class, new XC_MethodHook() {
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    XposedMod.context = (Context) param.args[0];
-                }
-            });
-
             XposedHelpers.findAndHookMethod("android.app.Instrumentation", lpparam.classLoader, "newActivity", ClassLoader.class, String.class, Intent.class, new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                     XposedMod.currentActivity = (Activity) param.getResult();
+                }
+            });
+
+            XposedHelpers.findAndHookMethod("android.app.Activity", lpparam.classLoader, "onRequestPermissionsResult", int.class, String[].class, int[].class, new XC_MethodReplacement() {
+                @Override
+                protected Object replaceHookedMethod(MethodHookParam methodHookParam) throws Throwable {
+                    XposedBridge.log("[SoundCloud Downloader] got result");
+                    return null;
                 }
             });
 
