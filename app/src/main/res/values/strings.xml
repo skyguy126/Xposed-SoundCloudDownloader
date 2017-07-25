@@ -1,15 +1,17 @@
 <resources>
     <string name="app_name">SoundCloud Downloader</string>
     <string name="title_activity_main">SoundCloud Downloader</string>
-    <string name="save_loc_spinner_text_string">Save Location:</string>
-    <string name="source_button_string">Source</string>
-    <string name="disp_launcher_icon_checkbox_string">Display launcher icon</string>
-    <string name="developed_text_string">Developed by skyguy126 and stirante.</string>
 
     <string-array name="save_loc_spinner_strings">
         <item>INTERNAL STORAGE</item>
         <item>DOWNLOAD</item>
         <item>MUSIC</item>
+    </string-array>
+
+    <string-array name="save_loc_spinner_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
     </string-array>
 
 </resources>

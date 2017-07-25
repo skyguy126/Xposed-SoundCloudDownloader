@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="Settings">
+
+        <CheckBoxPreference
+            android:key="disp_launcher_icon_checkbox"
+            android:title="Display Launcher Icon"
+            android:summary="Show the app icon on the homescreen"
+            android:defaultValue="true"/>
+
+        <ListPreference
+            android:key="save_loc_spinner"
+            android:title="Save Location"
+            android:summary="Save location for downloaded songs"
+            android:entries="@array/save_loc_spinner_strings"
+            android:entryValues="@array/save_loc_spinner_values"
+            android:defaultValue="1"/>
+
+        <Preference
+            android:key="source_button"
+            android:title="Source"
+            android:summary="Open GitHub (developed by skyguy126 and stirante)"/>
+
+    </PreferenceCategory>
+</PreferenceScreen>

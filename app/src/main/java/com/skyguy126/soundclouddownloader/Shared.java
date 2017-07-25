@@ -31,16 +31,16 @@ public class Shared {
         }
     }
 
-    public static int getSpinnerPosition(String item) {
-        switch (item) {
-            case "SDCARD":
-                return 0;
-            case "DOWNLOAD":
-                return 1;
-            case "MUSIC":
-                return 2;
+    public static String getSpinnerDescription(int key) {
+        switch (key) {
+            case 0:
+                return "/sdcard/";
+            case 1:
+                return "/sdcard/Download/";
+            case 2:
+                return "/sdcard/Music/";
             default:
-                return -1;
+                return "";
         }
     }
 

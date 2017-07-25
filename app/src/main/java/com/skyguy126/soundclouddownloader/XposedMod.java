@@ -13,7 +13,6 @@ import java.io.File;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
@@ -21,9 +20,9 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public class XposedMod implements IXposedHookLoadPackage {
 
-    private static int saveLoc;
-    private static Object urlBuilder;
+    // todo - will cause memory leak
     private static volatile Activity currentActivity;
+    private static Object urlBuilder;
 
     private static void download(Context context, String url, String name) {
 
@@ -31,17 +30,19 @@ public class XposedMod implements IXposedHookLoadPackage {
             return;
 
         String fileName = Shared.validateFileName(name + ".mp3");
+        File saveDirectory;
 
-        File saveLoc;
+        XSharedPreferences prefs = new XSharedPreferences(Shared.PACKAGE_NAME, Shared.PREFS_FILE_NAME);
+        int saveLocation = prefs.getInt(Shared.PREFS_SPINNER_KEY, 1);
 
-        if (XposedMod.saveLoc == 0)
-            saveLoc = Environment.getExternalStorageDirectory();
-        else if (XposedMod.saveLoc == 1)
-            saveLoc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        if (saveLocation == 0)
+            saveDirectory = Environment.getExternalStorageDirectory();
+        else if (saveLocation == 1)
+            saveDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         else
-            saveLoc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
+            saveDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
 
-        File file = new File(saveLoc, fileName);
+        File file = new File(saveDirectory, fileName);
 
         XposedBridge.log("[SoundCloud Downloader] Download path: " + file.getPath());
 
@@ -76,9 +77,6 @@ public class XposedMod implements IXposedHookLoadPackage {
             return;
 
         XposedBridge.log("[SoundCloud Downloader] Entry");
-
-        XSharedPreferences prefs = new XSharedPreferences(Shared.PACKAGE_NAME, Shared.PREFS_FILE_NAME);
-        XposedMod.saveLoc = prefs.getInt(Shared.PREFS_SPINNER_KEY, 1);
 
         XC_MethodHook downloadCatcher = new XC_MethodHook() {
             @Override
@@ -116,14 +114,6 @@ public class XposedMod implements IXposedHookLoadPackage {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                     XposedMod.currentActivity = (Activity) param.getResult();
-                }
-            });
-
-            XposedHelpers.findAndHookMethod("android.app.Activity", lpparam.classLoader, "onRequestPermissionsResult", int.class, String[].class, int[].class, new XC_MethodReplacement() {
-                @Override
-                protected Object replaceHookedMethod(MethodHookParam methodHookParam) throws Throwable {
-                    XposedBridge.log("[SoundCloud Downloader] got result");
-                    return null;
                 }
             });
 
