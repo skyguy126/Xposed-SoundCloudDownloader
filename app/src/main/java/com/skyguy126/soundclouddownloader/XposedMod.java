@@ -131,7 +131,7 @@ public class XposedMod implements IXposedHookLoadPackage {
                 }
             });
 
-            XposedHelpers.findAndHookMethod("com.soundcloud.android.tracks.TrackItemMenuPresenter", lpparam.classLoader, "setupMenu", android.view.View.class, new XC_MethodHook() {
+            XposedHelpers.findAndHookMethod("com.soundcloud.android.tracks.TrackItemMenuPresenter", lpparam.classLoader, "setupMenu", android.view.View.class, XposedHelpers.findClass("com.soundcloud.android.model.Urn", lpparam.classLoader), new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                     XposedMod.addDownloadItem(param.getResult());

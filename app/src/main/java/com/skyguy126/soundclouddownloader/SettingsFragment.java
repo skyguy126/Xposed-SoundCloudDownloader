@@ -59,7 +59,7 @@ public class SettingsFragment extends PreferenceFragment {
             }
         });
 
-        final Preference sourceButton = findPreference("source_button");
+        Preference sourceButton = findPreference("source_button");
         sourceButton.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             public boolean onPreferenceClick(Preference preference) {
                 Shared.openWebsite(getActivity(), Shared.SOURCE_LINK);
