@@ -7,12 +7,14 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import java.io.File;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
@@ -131,10 +133,34 @@ public class XposedMod implements IXposedHookLoadPackage {
                 }
             });
 
-            XposedHelpers.findAndHookMethod("com.soundcloud.android.tracks.TrackItemMenuPresenter", lpparam.classLoader, "setupMenu", android.view.View.class, XposedHelpers.findClass("com.soundcloud.android.model.Urn", lpparam.classLoader), new XC_MethodHook() {
+            XposedHelpers.findAndHookMethod("com.soundcloud.android.tracks.TrackItemMenuPresenter", lpparam.classLoader, "createAndShowMenu", android.view.View.class, new XC_MethodReplacement() {
                 @Override
-                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    XposedMod.addDownloadItem(param.getResult());
+                protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+                    View view = (View) param.args[0];
+
+                    Object trackOverflowMenuActionsFactory = XposedHelpers.getObjectField(param.thisObject, "trackOverflowMenuActionsFactory");
+                    Object track = XposedHelpers.getObjectField(param.thisObject, "track");
+                    Object popupMenuWrapperFactory = XposedHelpers.getObjectField(param.thisObject, "popupMenuWrapperFactory");
+                    Object playlistOwnerUrn = XposedHelpers.getObjectField(param.thisObject, "playlistOwnerUrn");
+                    Object options = XposedHelpers.getObjectField(param.thisObject, "options");
+
+                    Object from = XposedHelpers.callMethod(trackOverflowMenuActionsFactory, "from", track);
+                    Object build = XposedHelpers.callMethod(popupMenuWrapperFactory, "build", view.getContext(), view);
+                    XposedHelpers.callMethod(build, "inflate", 2131951623);
+                    XposedHelpers.callMethod(build, "setOnMenuItemClickListener", param.thisObject);
+                    XposedHelpers.callMethod(build, "setOnDismissListener", param.thisObject);
+                    XposedHelpers.callMethod(build, "setItemVisible", 2131887101, XposedHelpers.callMethod(from, "isAddableToAPlaylist"));
+                    XposedHelpers.callMethod(build, "setItemVisible", 2131887116, XposedHelpers.callMethod(param.thisObject, "isPlaylistOwner", playlistOwnerUrn));
+                    XposedHelpers.callMethod(build, "setItemVisible", 2131887100, XposedHelpers.callMethod(options, "getDisplayGoToArtistProfile"));
+                    XposedHelpers.callMethod(param.thisObject, "configureStationOptions", from, view.getContext(), build);
+                    XposedHelpers.callMethod(param.thisObject, "configureShare", from, build);
+                    XposedHelpers.callMethod(param.thisObject, "configurePlayNext", from, build);
+                    XposedHelpers.callMethod(param.thisObject, "configureLikeActionTitle", track, build);
+                    XposedHelpers.callMethod(param.thisObject, "configureRepostActionTitle", from, track, build);
+                    XposedMod.addDownloadItem(build);
+                    XposedHelpers.callMethod(build, "show");
+
+                    return null;
                 }
             });
 
