@@ -15,9 +15,10 @@ import android.support.v4.app.ActivityCompat;
 public class Shared {
     public static final String PACKAGE_NAME = BuildConfig.APPLICATION_ID;
     public static final String PREFS_FILE_NAME = "scd_prefs";
-    public static final String PREFS_CHECKBOX_KEY = "checkbox";
-    public static final String PREFS_SPINNER_KEY = "spinner";
+    public static final String PREFS_CHECKBOX_KEY = "disp_launcher_icon_checkbox";
+    public static final String PREFS_SPINNER_KEY = "save_loc_spinner";
     public static final String SOURCE_LINK = "https://github.com/skyguy126/Xposed-SoundCloudDownloader";
+    public static final String CUSTOM_PATH_DEFAULT = "/sdcard/";
 
     public static void openWebsite(Context context, String url) {
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
@@ -39,6 +40,8 @@ public class Shared {
                 return "/sdcard/Download/";
             case 2:
                 return "/sdcard/Music/";
+            case 3:
+                return "User Defined";
             default:
                 return "";
         }

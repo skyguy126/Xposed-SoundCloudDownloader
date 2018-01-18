@@ -1,13 +1,18 @@
 package com.skyguy126.soundclouddownloader;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.AndroidAppHelper;
 import android.app.DownloadManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
+import android.text.InputType;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import java.io.File;
@@ -22,28 +27,11 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public class XposedMod implements IXposedHookLoadPackage {
 
-    // todo - will cause memory leak
+    //TODO - will cause memory leak, find workaround
     private static volatile Activity currentActivity;
     private static Object urlBuilder;
 
-    private static void download(Context context, String url, String name) {
-
-        if (!Shared.validatePermissions(currentActivity))
-            return;
-
-        String fileName = Shared.validateFileName(name + ".mp3");
-        File saveDirectory;
-
-        XSharedPreferences prefs = new XSharedPreferences(Shared.PACKAGE_NAME, Shared.PREFS_FILE_NAME);
-        int saveLocation = prefs.getInt(Shared.PREFS_SPINNER_KEY, 1);
-
-        if (saveLocation == 0)
-            saveDirectory = Environment.getExternalStorageDirectory();
-        else if (saveLocation == 1)
-            saveDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-        else
-            saveDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
-
+    private static void download(Context context, String url, File saveDirectory, String fileName) {
         File file = new File(saveDirectory, fileName);
 
         XposedBridge.log("[SoundCloud Downloader] Download path: " + file.getPath());
@@ -53,17 +41,68 @@ public class XposedMod implements IXposedHookLoadPackage {
             return;
         }
 
-        Toast.makeText(context, "Downloading...", Toast.LENGTH_SHORT).show();
-
         DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
         request.setTitle(fileName);
         request.allowScanningByMediaScanner();
         request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
         request.setDestinationUri(Uri.fromFile(file));
 
-        downloadManager.enqueue(request);
+        try {
+            downloadManager.enqueue(request);
+            Toast.makeText(context, "Downloading...", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            XposedBridge.log("[SoundCloud Downloader] Download Error: " + e.getMessage());
+            Toast.makeText(context, "Download failed!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private static void buildDownload(final Context context, final String url, final String name) {
+
+        if (!Shared.validatePermissions(currentActivity))
+            return;
+
+        final String fileName = Shared.validateFileName(name + ".mp3");
+        File saveDirectory;
+
+        XSharedPreferences prefs = new XSharedPreferences(Shared.PACKAGE_NAME, Shared.PREFS_FILE_NAME);
+        int saveLocation = prefs.getInt(Shared.PREFS_SPINNER_KEY, -1);
+
+        if (saveLocation == 0) {
+            saveDirectory = Environment.getExternalStorageDirectory();
+        } else if (saveLocation == 1) {
+            saveDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        } else if (saveLocation == 2){
+            saveDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
+        } else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+            builder.setTitle("Save Directory");
+
+            final EditText input = new EditText(context);
+            input.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
+            input.setText(Shared.CUSTOM_PATH_DEFAULT);
+            builder.setView(input);
+
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    File saveDirectory = new File(input.getText().toString());
+                    XposedMod.download(context, url, saveDirectory, fileName);
+                }
+            });
+
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+
+            builder.show();
+            return;
+        }
+
+        XposedMod.download(context, url, saveDirectory, fileName);
     }
 
     private static void addDownloadItem(Object popupMenuWrapper) {
@@ -101,7 +140,7 @@ public class XposedMod implements IXposedHookLoadPackage {
 
                 if (urlBuilder != null) {
                     String url = (String) XposedHelpers.callMethod(urlBuilder, "buildHttpsStreamUrl", new Class[]{XposedHelpers.findClass("com.soundcloud.android.model.Urn", lpparam.classLoader)}, urn);
-                    XposedMod.download(currentActivity, url, name);
+                    XposedMod.buildDownload(currentActivity, url, name);
                 } else {
                     Toast.makeText(currentActivity, "Failed to get url!", Toast.LENGTH_SHORT).show();
                 }
@@ -146,16 +185,16 @@ public class XposedMod implements IXposedHookLoadPackage {
 
                     Object from = XposedHelpers.callMethod(trackOverflowMenuActionsFactory, "from", track);
                     Object build = XposedHelpers.callMethod(popupMenuWrapperFactory, "build", view.getContext(), view);
-                    XposedHelpers.callMethod(build, "inflate", 2131951623);
+                    XposedHelpers.callMethod(build, "inflate", 2132017159);
                     XposedHelpers.callMethod(build, "setOnMenuItemClickListener", param.thisObject);
                     XposedHelpers.callMethod(build, "setOnDismissListener", param.thisObject);
-                    XposedHelpers.callMethod(build, "setItemVisible", 2131887101, XposedHelpers.callMethod(from, "isAddableToAPlaylist"));
-                    XposedHelpers.callMethod(build, "setItemVisible", 2131887116, XposedHelpers.callMethod(param.thisObject, "isPlaylistOwner", playlistOwnerUrn));
-                    XposedHelpers.callMethod(build, "setItemVisible", 2131887100, XposedHelpers.callMethod(options, "getDisplayGoToArtistProfile"));
+                    XposedHelpers.callMethod(build, "setItemVisible", 2131952638, XposedHelpers.callMethod(from, "isAddableToAPlaylist"));
+                    XposedHelpers.callMethod(build, "setItemVisible", 2131952653, XposedHelpers.callMethod(param.thisObject, "isPlaylistOwner", playlistOwnerUrn));
+                    XposedHelpers.callMethod(build, "setItemVisible", 2131952637, XposedHelpers.callMethod(options, "getDisplayGoToArtistProfile"));
                     XposedHelpers.callMethod(param.thisObject, "configureStationOptions", from, view.getContext(), build);
                     XposedHelpers.callMethod(param.thisObject, "configureShare", from, build);
                     XposedHelpers.callMethod(param.thisObject, "configurePlayNext", from, build);
-                    XposedHelpers.callMethod(param.thisObject, "configureLikeActionTitle", track, build);
+                    XposedHelpers.callMethod(param.thisObject, "configureLikeActionTitle", track, build, view.getContext());
                     XposedHelpers.callMethod(param.thisObject, "configureRepostActionTitle", from, track, build);
                     XposedMod.addDownloadItem(build);
                     XposedHelpers.callMethod(build, "show");

@@ -24,7 +24,7 @@ public class SettingsFragment extends PreferenceFragment {
 
         this.prefs = getActivity().getSharedPreferences(Shared.PREFS_FILE_NAME, MODE_WORLD_READABLE);
 
-        CheckBoxPreference showLauncherIconCheckbox = (CheckBoxPreference) findPreference("disp_launcher_icon_checkbox");
+        CheckBoxPreference showLauncherIconCheckbox = (CheckBoxPreference) findPreference(Shared.PREFS_CHECKBOX_KEY);
         showLauncherIconCheckbox.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             public boolean onPreferenceClick(Preference preference) {
                 CheckBoxPreference checkBoxPreference = (CheckBoxPreference) preference;
@@ -42,7 +42,7 @@ public class SettingsFragment extends PreferenceFragment {
             }
         });
 
-        ListPreference saveLocationSpinner = (ListPreference) findPreference("save_loc_spinner");
+        ListPreference saveLocationSpinner = (ListPreference) findPreference(Shared.PREFS_SPINNER_KEY);
         saveLocationSpinner.setSummary(Shared.getSpinnerDescription(Integer.valueOf(saveLocationSpinner.getValue())));
         saveLocationSpinner.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
             @Override
