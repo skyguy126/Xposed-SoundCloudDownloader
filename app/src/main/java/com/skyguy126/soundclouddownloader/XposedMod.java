@@ -26,11 +26,6 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public class XposedMod implements IXposedHookLoadPackage {
 
-    private static int TRACK_ITEM_ACTIONS;
-    private static int ADD_TO_PLAYLIST;
-    private static int REMOVE_FROM_PLAYLIST;
-    private static int GO_TO_ARTIST;
-
     //TODO - will cause memory leak, find workaround
     private static volatile Activity currentActivity;
     private static Object urlBuilder;
@@ -110,7 +105,7 @@ public class XposedMod implements IXposedHookLoadPackage {
     }
 
     private static void addDownloadItem(Object popupMenuWrapper) {
-        Object popupMenu = XposedHelpers.getObjectField(popupMenuWrapper, "popupMenu");
+        Object popupMenu = XposedHelpers.getObjectField(popupMenuWrapper, "a");
         Object menu = XposedHelpers.callMethod(popupMenu, "getMenu");
         XposedHelpers.callMethod(menu, "add", "Download");
     }
@@ -131,19 +126,22 @@ public class XposedMod implements IXposedHookLoadPackage {
                 if (!item.getTitle().toString().equalsIgnoreCase("Download"))
                     return;
 
-                Object track = XposedHelpers.getObjectField(param.thisObject, "track");
-                Object urn = XposedHelpers.callMethod(track, "getUrn");
-
-                String className = track.getClass().getName();
+                String currentClassName = param.thisObject.getClass().getName();
                 String name;
+                Object urn;
 
-                if (className.equals("com.soundcloud.android.playback.ui.PlayerTrackState"))
-                    name = (String) XposedHelpers.callMethod(track, "getTitle");
-                else
-                    name = (String) XposedHelpers.callMethod(track, "title");
+                if (currentClassName.equals("exo")) {
+                    Object track = XposedHelpers.getObjectField(param.thisObject, "l");
+                    urn = XposedHelpers.callMethod(track, "getUrn");
+                    name = (String) XposedHelpers.callMethod(track, "d");
+                } else {
+                    Object track = XposedHelpers.getObjectField(param.thisObject, "r");
+                    urn = XposedHelpers.callMethod(track, "getUrn");
+                    name = (String) XposedHelpers.callMethod(track, "n");
+                }
 
-                if (urlBuilder != null) {
-                    String url = (String) XposedHelpers.callMethod(urlBuilder, "buildHttpsStreamUrl", new Class[]{XposedHelpers.findClass("com.soundcloud.android.model.Urn", lpparam.classLoader)}, urn);
+                if (urlBuilder != null && urn != null) {
+                    String url = (String) XposedHelpers.callMethod(urlBuilder, "a", new Class[]{XposedHelpers.findClass("dht", lpparam.classLoader)}, urn);
                     XposedMod.buildDownload(currentActivity, url, name);
                 } else {
                     Toast.makeText(currentActivity, "Failed to get url!", Toast.LENGTH_SHORT).show();
@@ -162,58 +160,58 @@ public class XposedMod implements IXposedHookLoadPackage {
                 }
             });
 
-            XposedHelpers.findAndHookConstructor("com.soundcloud.android.playback.StreamUrlBuilder", lpparam.classLoader, XposedHelpers.findClass("com.soundcloud.android.accounts.AccountOperations", lpparam.classLoader), XposedHelpers.findClass("com.soundcloud.android.api.ApiUrlBuilder", lpparam.classLoader), new XC_MethodHook() {
+            XposedHelpers.findAndHookConstructor("emx", lpparam.classLoader, XposedHelpers.findClass("avf", lpparam.classLoader), XposedHelpers.findClass("bkv", lpparam.classLoader), new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                     XposedMod.urlBuilder = param.thisObject;
                 }
             });
 
-            XposedHelpers.findAndHookMethod("com.soundcloud.android.playback.ui.TrackPageMenuController", lpparam.classLoader, "setupMenu", new XC_MethodHook() {
+            XposedHelpers.findAndHookMethod("exo", lpparam.classLoader, "f", new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    XposedMod.addDownloadItem(XposedHelpers.getObjectField(param.thisObject, "popupMenuWrapper"));
+                    XposedMod.addDownloadItem(XposedHelpers.getObjectField(param.thisObject, "b"));
                 }
             });
 
-            XposedHelpers.findAndHookMethod("com.soundcloud.android.tracks.TrackItemMenuPresenter", lpparam.classLoader, "createAndShowMenu", android.view.View.class, new XC_MethodReplacement() {
+            XposedHelpers.findAndHookMethod("hgu", lpparam.classLoader, "a", android.view.View.class, new XC_MethodReplacement() {
                 @Override
                 protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
                     View view = (View) param.args[0];
 
-                    XposedMod.TRACK_ITEM_ACTIONS = XposedMod.currentActivity.getResources().getIdentifier("track_item_actions", "menu", "com.soundcloud.android");
-                    XposedMod.ADD_TO_PLAYLIST = XposedMod.currentActivity.getResources().getIdentifier("add_to_playlist", "id", "com.soundcloud.android");
-                    XposedMod.REMOVE_FROM_PLAYLIST = XposedMod.currentActivity.getResources().getIdentifier("remove_from_playlist", "id", "com.soundcloud.android");
-                    XposedMod.GO_TO_ARTIST = XposedMod.currentActivity.getResources().getIdentifier("go_to_artist", "id", "com.soundcloud.android");
+                    int trackItemActions = XposedMod.currentActivity.getResources().getIdentifier("track_item_actions", "menu", "com.soundcloud.android");
+                    int addToPlaylist = XposedMod.currentActivity.getResources().getIdentifier("add_to_playlist", "id", "com.soundcloud.android");
+                    int removeFromPlaylist = XposedMod.currentActivity.getResources().getIdentifier("remove_from_playlist", "id", "com.soundcloud.android");
+                    int goToArtist = XposedMod.currentActivity.getResources().getIdentifier("go_to_artist", "id", "com.soundcloud.android");
 
-                    Object trackOverflowMenuActionsFactory = XposedHelpers.getObjectField(param.thisObject, "trackOverflowMenuActionsFactory");
-                    Object track = XposedHelpers.getObjectField(param.thisObject, "track");
-                    Object popupMenuWrapperFactory = XposedHelpers.getObjectField(param.thisObject, "popupMenuWrapperFactory");
-                    Object playlistOwnerUrn = XposedHelpers.getObjectField(param.thisObject, "playlistOwnerUrn");
-                    Object options = XposedHelpers.getObjectField(param.thisObject, "options");
+                    Object trackOverflowMenuActionsFactory = XposedHelpers.getObjectField(param.thisObject, "q");
+                    Object track = XposedHelpers.getObjectField(param.thisObject, "r");
+                    Object popupMenuWrapperFactory = XposedHelpers.getObjectField(param.thisObject, "a");
+                    Object playlistOwnerUrn = XposedHelpers.getObjectField(param.thisObject, "u");
+                    Object options = XposedHelpers.getObjectField(param.thisObject, "y");
 
-                    Object from = XposedHelpers.callMethod(trackOverflowMenuActionsFactory, "from", track);
-                    Object build = XposedHelpers.callMethod(popupMenuWrapperFactory, "build", view.getContext(), view);
-                    XposedHelpers.callMethod(build, "inflate", XposedMod.TRACK_ITEM_ACTIONS);
-                    XposedHelpers.callMethod(build, "setOnMenuItemClickListener", param.thisObject);
-                    XposedHelpers.callMethod(build, "setOnDismissListener", param.thisObject);
-                    XposedHelpers.callMethod(build, "setItemVisible", XposedMod.ADD_TO_PLAYLIST, XposedHelpers.callMethod(from, "isAddableToAPlaylist"));
-                    XposedHelpers.callMethod(build, "setItemVisible", XposedMod.REMOVE_FROM_PLAYLIST, XposedHelpers.callMethod(param.thisObject, "isPlaylistOwner", playlistOwnerUrn));
-                    XposedHelpers.callMethod(build, "setItemVisible", XposedMod.GO_TO_ARTIST, XposedHelpers.callMethod(options, "getDisplayGoToArtistProfile"));
-                    XposedHelpers.callMethod(param.thisObject, "configureStationOptions", from, view.getContext(), build);
-                    XposedHelpers.callMethod(param.thisObject, "configureShare", from, build);
-                    XposedHelpers.callMethod(param.thisObject, "configurePlayNext", from, build);
-                    XposedHelpers.callMethod(param.thisObject, "configureLikeActionTitle", track, build, view.getContext());
-                    XposedHelpers.callMethod(param.thisObject, "configureRepostActionTitle", from, track, build);
+                    Object from = XposedHelpers.callMethod(trackOverflowMenuActionsFactory, "a", track);
+                    Object build = XposedHelpers.callMethod(popupMenuWrapperFactory, "a", view.getContext(), view);
+                    XposedHelpers.callMethod(build, "a", trackItemActions);
+                    XposedHelpers.callMethod(build, "a", param.thisObject);
+                    XposedHelpers.callMethod(build, "b", param.thisObject);
+                    XposedHelpers.callMethod(build, "a", addToPlaylist, XposedHelpers.callMethod(from, "d"));
+                    XposedHelpers.callMethod(build, "a", removeFromPlaylist, XposedHelpers.callMethod(param.thisObject, "c", playlistOwnerUrn));
+                    XposedHelpers.callMethod(build, "a", goToArtist, XposedHelpers.callMethod(options, "a"));
+                    XposedHelpers.callMethod(param.thisObject, "a", from, view.getContext(), build);
+                    XposedHelpers.callMethod(param.thisObject, "a", from, build);
+                    XposedHelpers.callMethod(param.thisObject, "b", from, build);
+                    XposedHelpers.callMethod(param.thisObject, "a", track, build, view.getContext());
+                    XposedHelpers.callMethod(param.thisObject, "a", from, track, build);
                     XposedMod.addDownloadItem(build);
-                    XposedHelpers.callMethod(build, "show");
+                    XposedHelpers.callMethod(build, "a");
 
                     return null;
                 }
             });
 
-            XposedHelpers.findAndHookMethod("com.soundcloud.android.playback.ui.TrackPageMenuController", lpparam.classLoader, "onMenuItemClick", android.view.MenuItem.class, android.content.Context.class, downloadCatcher);
-            XposedHelpers.findAndHookMethod("com.soundcloud.android.tracks.TrackItemMenuPresenter", lpparam.classLoader, "onMenuItemClick", android.view.MenuItem.class, android.content.Context.class, downloadCatcher);
+            XposedHelpers.findAndHookMethod("exo", lpparam.classLoader, "a", android.view.MenuItem.class, android.content.Context.class, downloadCatcher);
+            XposedHelpers.findAndHookMethod("hgu", lpparam.classLoader, "a", android.view.MenuItem.class, android.content.Context.class, downloadCatcher);
 
         } catch (Throwable t) {
             XposedBridge.log("[SoundCloud Downloader] Error: " + t.getMessage());
