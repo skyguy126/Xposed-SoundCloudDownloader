@@ -18,8 +18,8 @@ android {
         applicationId "com.skyguy126.soundclouddownloader"
         minSdkVersion 16
         targetSdkVersion 23
-        versionCode 6
-        versionName "1.4.1"
+        versionCode 7
+        versionName "1.4.2"
     }
     buildTypes {
         release {
@@ -36,4 +36,5 @@ dependencies {
     compile 'com.android.support:design:23.4.0'
     testCompile 'junit:junit:4.12'
     provided 'de.robv.android.xposed:api:82'
+    compile group: 'com.mpatric', name: 'mp3agic', version: '0.9.1'
 }
