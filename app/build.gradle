@@ -36,4 +36,5 @@ dependencies {
     compile 'com.android.support:design:23.4.0'
     testCompile 'junit:junit:4.12'
     provided 'de.robv.android.xposed:api:82'
+    compile group: 'com.mpatric', name: 'mp3agic', version: '0.9.1'
 }
