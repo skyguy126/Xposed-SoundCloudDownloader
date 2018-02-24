@@ -17,6 +17,12 @@
             android:entryValues="@array/save_loc_spinner_values"
             android:defaultValue="1"/>
 
+        <CheckBoxPreference
+            android:key="include_metadata"
+            android:title="Include Metadata"
+            android:summary="Package album art, artist, and genre in file"
+            android:defaultValue="false"/>
+
         <Preference
             android:key="source_button"
             android:title="Source"

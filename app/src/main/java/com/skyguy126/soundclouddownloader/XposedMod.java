@@ -1,27 +1,12 @@
 package com.skyguy126.soundclouddownloader;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.DownloadManager;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.net.Uri;
-import android.os.Environment;
-import android.text.InputType;
-import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
-import android.widget.Toast;
-
-import java.io.File;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XC_MethodReplacement;
-import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
@@ -29,139 +14,8 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 public class XposedMod implements IXposedHookLoadPackage {
 
     //TODO - will cause memory leak, find workaround
-    private static volatile Activity currentActivity;
-    private static Object urlBuilder;
-
-    private static void download(Context context, String url, File saveDirectory, final String fileName, final String imgUrl) {
-        final File file = new File(saveDirectory, fileName);
-        final File imgFile = new File(saveDirectory, "img_" + fileName);
-        final String filePath = file.getPath();
-
-        XposedBridge.log("[SoundCloud Downloader] Download path: " + file.getPath());
-
-        if (file.exists()) {
-            Toast.makeText(context, "File already exists!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        final DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-        final DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
-        request.setTitle(fileName);
-        request.allowScanningByMediaScanner();
-        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-        request.setDestinationUri(Uri.fromFile(file));
-
-        final IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
-
-        final BroadcastReceiver imageDownloadComplete = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                XposedBridge.log("[SoundCloud Downloader] Entering mp3 tag modifier...");
-                try {
-                    /*
-                    context.unregisterReceiver(this);
-                    Mp3File mp3file = new Mp3File(filePath);
-                    ID3v2 id3v2tag;
-
-                    if (mp3file.hasId3v2Tag()) {
-                        XposedBridge.log("[SoundCloud Downloader] has tag already");
-                        id3v2tag = mp3file.getId3v2Tag();
-                    } else {
-                        XposedBridge.log("[SoundCloud Downloader] doesnt have tag");
-                        id3v2tag = new ID3v24Tag();
-                        mp3file.setId3v2Tag(id3v2tag);
-                    }
-
-                    XposedBridge.log("[SoundCloud Downloader] reading random file");
-                    RandomAccessFile img = new RandomAccessFile(imgFile.getPath(), "r");
-                    byte[] bytes = new byte[(int) imgFile.length()];
-                    img.read(bytes);
-                    XposedBridge.log("[SoundCloud Downloader] done reading random file");
-                    img.close();
-
-                    id3v2tag.setAlbumImage(bytes, "image/jpeg");
-                    mp3file.save(file.getAbsolutePath());
-
-                    XposedBridge.log("[SoundCloud Downloader] fully done!");
-                    */
-                } catch (Exception e) {
-                    XposedBridge.log("[SoundCloud Downloader] mp3 tag error: " + e.getMessage());
-                }
-            }
-        };
-
-        final BroadcastReceiver trackDownloadComplete = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                XposedBridge.log("[SoundCloud Downloader] Entering album art downloader...");
-                context.unregisterReceiver(this);
-                DownloadManager.Request imgRequest = new DownloadManager.Request(Uri.parse(imgUrl));
-                imgRequest.setTitle(fileName + " Album Art");
-                imgRequest.allowScanningByMediaScanner();
-                imgRequest.setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN);
-                imgRequest.setDestinationUri(Uri.fromFile(imgFile));
-                context.registerReceiver(imageDownloadComplete, filter);
-                downloadManager.enqueue(imgRequest);
-            }
-        };
-
-        try {
-            context.registerReceiver(trackDownloadComplete, filter);
-            downloadManager.enqueue(request);
-            Toast.makeText(context, "Downloading...", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            XposedBridge.log("[SoundCloud Downloader] Download Error: " + e.getMessage());
-            Toast.makeText(context, "Download failed!", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private static void buildDownload(final Context context, final String url, final String name, final String imgUrl) {
-
-        if (!Shared.validatePermissions(currentActivity))
-            return;
-
-        final String fileName = Shared.validateFileName(name + ".mp3");
-        File saveDirectory;
-
-        XSharedPreferences prefs = new XSharedPreferences(Shared.PACKAGE_NAME, Shared.PREFS_FILE_NAME);
-        int saveLocation = prefs.getInt(Shared.PREFS_SPINNER_KEY, -1);
-
-        if (saveLocation == 0) {
-            saveDirectory = Environment.getExternalStorageDirectory();
-        } else if (saveLocation == 1) {
-            saveDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-        } else if (saveLocation == 2){
-            saveDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
-        } else {
-            AlertDialog.Builder builder = new AlertDialog.Builder(context);
-            builder.setTitle("Save Directory");
-
-            final EditText input = new EditText(context);
-            input.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
-            input.setText(Shared.CUSTOM_PATH_DEFAULT);
-            builder.setView(input);
-
-            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    File saveDirectory = new File(input.getText().toString());
-                    XposedMod.download(context, url, saveDirectory, fileName, imgUrl);
-                }
-            });
-
-            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.cancel();
-                }
-            });
-
-            builder.show();
-            return;
-        }
-
-        XposedMod.download(context, url, saveDirectory, fileName, imgUrl);
-    }
+    public static volatile Activity currentActivity;
+    public static volatile Object urlBuilder;
 
     private static void addDownloadItem(Object popupMenuWrapper) {
         Object popupMenu = XposedHelpers.getObjectField(popupMenuWrapper, "a");
@@ -175,49 +29,8 @@ public class XposedMod implements IXposedHookLoadPackage {
         if (!lpparam.packageName.equals("com.soundcloud.android"))
             return;
 
-        XposedBridge.log("[SoundCloud Downloader] Entry");
-
-        XC_MethodHook downloadCatcher = new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-
-                XposedBridge.log("[SoundCloud Downloader] entered download catcher");
-
-                MenuItem item = (MenuItem) param.args[0];
-                if (!item.getTitle().toString().equalsIgnoreCase("Download"))
-                    return;
-
-                String currentClassName = param.thisObject.getClass().getName();
-                String name;
-                Object track;
-                Object urn;
-
-                if (currentClassName.equals("exo")) {
-                    track = XposedHelpers.getObjectField(param.thisObject, "l");
-                    urn = XposedHelpers.callMethod(track, "getUrn");
-                    name = (String) XposedHelpers.callMethod(track, "d");
-                } else {
-                    track = XposedHelpers.getObjectField(param.thisObject, "r");
-                    urn = XposedHelpers.callMethod(track, "getUrn");
-                    name = (String) XposedHelpers.callMethod(track, "n");
-                }
-
-                XposedBridge.log("[SoundCloud Downloader] Track name: " + name);
-                Object optional = XposedHelpers.callMethod(track, "getImageUrlTemplate");
-                String imgUrl = (String) XposedHelpers.callMethod(optional, "get");
-                imgUrl = imgUrl.replaceAll("(\\{size\\})", "t250x250");
-                XposedBridge.log("[SoundCloud Downloader] Image url: " + imgUrl);
-
-                if (urlBuilder != null && urn != null) {
-                    String url = (String) XposedHelpers.callMethod(urlBuilder, "a", new Class[]{XposedHelpers.findClass("dht", lpparam.classLoader)}, urn);
-                    XposedMod.buildDownload(currentActivity, url, name, imgUrl);
-                } else {
-                    Toast.makeText(currentActivity, "Failed to get url!", Toast.LENGTH_SHORT).show();
-                }
-
-                param.setResult(true);
-            }
-        };
+        XposedBridge.log("[SoundCloud Downloader] Module entry");
+        DownloadCatcher downloadCatcher = new DownloadCatcher(lpparam.classLoader);
 
         try {
 

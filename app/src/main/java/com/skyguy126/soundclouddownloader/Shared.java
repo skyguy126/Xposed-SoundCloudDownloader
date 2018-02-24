@@ -15,8 +15,10 @@ import android.support.v4.app.ActivityCompat;
 public class Shared {
     public static final String PACKAGE_NAME = BuildConfig.APPLICATION_ID;
     public static final String PREFS_FILE_NAME = "scd_prefs";
-    public static final String PREFS_CHECKBOX_KEY = "disp_launcher_icon_checkbox";
+    public static final String PREFS_LAUNCHER_ICON_KEY = "disp_launcher_icon_checkbox";
     public static final String PREFS_SPINNER_KEY = "save_loc_spinner";
+    public static final String PREFS_SAVE_PATH_KEY = "save_loc_spinner_path";
+    public static final String PREFS_METADATA_KEY = "include_metadata";
     public static final String SOURCE_LINK = "https://github.com/skyguy126/Xposed-SoundCloudDownloader";
     public static final String CUSTOM_PATH_DEFAULT = "/sdcard/";
 
