@@ -18,7 +18,7 @@ This project is licensed under the GNU GPLv3, which can be found in the LICENSE 
 
 ### Dependencies
 - [Picasso](http://square.github.io/picasso/)
-- [MyID3_for_Android](https://sites.google.com/site/eternalsandbox/myid3-for-android)
+- [JAudioTagger-Android](https://github.com/maxbruecken/jaudiotagger-android)
 
 ### Resources
 - [Xposed Repository](http://repo.xposed.info/module/com.skyguy126.soundclouddownloader)

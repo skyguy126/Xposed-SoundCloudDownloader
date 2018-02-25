@@ -5,18 +5,21 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
-import org.cmc.music.metadata.ImageData;
-import org.cmc.music.metadata.MusicMetadata;
-import org.cmc.music.metadata.MusicMetadataSet;
-import org.cmc.music.myid3.MyID3;
+import org.jaudiotagger.audio.AudioFile;
+import org.jaudiotagger.audio.AudioFileIO;
+import org.jaudiotagger.tag.FieldKey;
+import org.jaudiotagger.tag.Tag;
+import org.jaudiotagger.tag.TagOptionSingleton;
+import org.jaudiotagger.tag.images.Artwork;
+import org.jaudiotagger.tag.images.ArtworkFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
 import de.robv.android.xposed.XposedBridge;
@@ -30,11 +33,11 @@ public class MetadataInjector extends BroadcastReceiver {
     }
 
     @Override
-    public void onReceive(Context context, Intent intent) {
+    public void onReceive(final Context context, Intent intent) {
         XposedBridge.log("[SoundCloud Downloader] Entering album art downloader...");
         context.unregisterReceiver(this);
 
-        XposedBridge.log("[SoundCloud Downloader] Unregistered dlrec, starting Picasso...");
+        XposedBridge.log("[SoundCloud Downloader] Unregistered receiver, starting Picasso...");
         Picasso.with(XposedMod.currentActivity).load(downloadPayload.getImageUrl()).into(new Target() {
             @Override
             public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
@@ -45,34 +48,35 @@ public class MetadataInjector extends BroadcastReceiver {
                         return;
                     }
 
-                    MusicMetadataSet metaSet = new MyID3().read(downloadedFile);
-                    if (metaSet == null) {
-                        XposedBridge.log("[SoundCloud Downloader] metaset is null...");
-                        return;
-                    }
+                    TagOptionSingleton.getInstance().setAndroid(true);
+                    AudioFile audioFile = AudioFileIO.read(downloadedFile);
+                    Tag tag = audioFile.getTagOrCreateAndSetDefault();
+                    tag.setField(FieldKey.ARTIST,downloadPayload.getArtistName());
+                    tag.setField(FieldKey.GENRE, downloadPayload.getGenre());
 
-                    MusicMetadata meta = new MusicMetadata("metadata");
-                    meta.setArtist(downloadPayload.getArtistName());
-                    meta.setGenre(downloadPayload.getGenre());
                     ByteArrayOutputStream imgStream = new ByteArrayOutputStream();
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, imgStream);
-                    meta.addPicture(new ImageData(imgStream.toByteArray(), "", "", 3));
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, imgStream);
+                    File artworkFile = File.createTempFile(downloadPayload.getTitle(), ".jpg");
+                    FileOutputStream artworkFileStream = new FileOutputStream(artworkFile);
+                    artworkFileStream.write(imgStream.toByteArray());
+                    artworkFileStream.close();
+                    artworkFile.deleteOnExit();
                     imgStream.close();
 
-                    File taggedFile = File.createTempFile(downloadPayload.getTitle(), "-scd");
-                    new MyID3().write(downloadedFile, taggedFile, metaSet, meta);
+                    Artwork artwork = ArtworkFactory.createArtworkFromFile(artworkFile);
+                    artwork.setPictureType(3);
+                    tag.deleteArtworkField();
+                    tag.addField(artwork);
+                    tag.setField(artwork);
 
-                    FileOutputStream downloadedFileStream = new FileOutputStream(downloadedFile, false);
-                    byte[] taggedFileBytes = new byte[(int) taggedFile.length()];
-                    FileInputStream taggedFileStream = new FileInputStream(taggedFile);
-                    taggedFileStream.read(taggedFileBytes);
-                    downloadedFileStream.write(taggedFileBytes);
+                    audioFile.setTag(tag);
+                    AudioFileIO.write(audioFile);
 
-                    downloadedFileStream.close();
-                    taggedFileStream.close();
-                    taggedFile.deleteOnExit();
+                    XposedBridge.log("[SoundCloud Downloader] Finished writing metadata...");
 
-                    XposedBridge.log("[SoundCloud Downloader] wrote mp3...");
+                    XposedMod.currentActivity.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(audioFile.getFile())));
+
+                    XposedBridge.log("[SoundCloud Downloader] Broadcasting update to media scanner...");
 
                 } catch (Exception e) {
                     XposedBridge.log("[SoundCloud Downloader] Metadata error: " + e.getMessage());
@@ -81,12 +85,12 @@ public class MetadataInjector extends BroadcastReceiver {
 
             @Override
             public void onBitmapFailed(Drawable errorDrawable) {
-                XposedBridge.log("[SoundCloud Downloader] album art fetch failed!");
+                XposedBridge.log("[SoundCloud Downloader] Album art fetch failed!");
             }
 
             @Override
             public void onPrepareLoad(Drawable placeHolderDrawable) {
-
+                XposedBridge.log("[SoundCloud Downloader] Preparing to load picasso...");
             }
         });
     }

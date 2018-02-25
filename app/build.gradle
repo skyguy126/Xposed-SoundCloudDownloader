@@ -37,5 +37,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
     provided 'de.robv.android.xposed:api:82'
     compile 'com.squareup.picasso:picasso:2.5.2'
-    compile files('libs/MyID3_for_Android.jar')
+    compile files('libs/jaudiotagger-android-2.2.3.jar')
 }

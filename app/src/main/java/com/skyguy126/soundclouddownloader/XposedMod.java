@@ -29,7 +29,7 @@ public class XposedMod implements IXposedHookLoadPackage {
         if (!lpparam.packageName.equals("com.soundcloud.android"))
             return;
 
-        XposedBridge.log("[SoundCloud Downloader] Module entry");
+        XposedBridge.log("[SoundCloud Downloader] Module entry, version " + BuildConfig.VERSION_NAME);
         DownloadCatcher downloadCatcher = new DownloadCatcher(lpparam.classLoader);
 
         try {

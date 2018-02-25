@@ -65,7 +65,7 @@ public class Downloader {
 
         try {
             if (downloadPayload.includeMetadata()) {
-                XposedBridge.log("[SoundCloud Downloader] Adding metadata injector");
+                XposedBridge.log("[SoundCloud Downloader] Adding metadata injector...");
                 XposedMod.currentActivity.registerReceiver(new MetadataInjector(downloadPayload), filter);
             }
 
@@ -88,11 +88,11 @@ public class Downloader {
 
         XSharedPreferences prefs = new XSharedPreferences(Shared.PACKAGE_NAME, Shared.PREFS_FILE_NAME);
         boolean includeMetadata = prefs.getBoolean(Shared.PREFS_METADATA_KEY, false);
-        XposedBridge.log("[SoundCloud Downloader] include metadata: " + includeMetadata);
-
         String saveLocationString = prefs.getString(Shared.PREFS_SPINNER_KEY, "-1");
         int saveLocation = Integer.parseInt(saveLocationString);
-        XposedBridge.log("[SoundCloud Downloader] saveloc: " + saveLocation);
+
+        XposedBridge.log("[SoundCloud Downloader] Include metadata: " + includeMetadata);
+        XposedBridge.log("[SoundCloud Downloader] Save location: " + saveLocation);
 
         if (saveLocation == 0) {
             saveDirectory = Environment.getExternalStorageDirectory();

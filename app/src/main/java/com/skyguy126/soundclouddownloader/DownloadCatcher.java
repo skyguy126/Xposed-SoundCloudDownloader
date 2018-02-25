@@ -45,14 +45,14 @@ public class DownloadCatcher extends XC_MethodHook {
 
         Object optionalImg = XposedHelpers.callMethod(track, "getImageUrlTemplate");
         String imgUrl = (String) XposedHelpers.callMethod(optionalImg, "c");
-        imgUrl = imgUrl.replaceAll("(\\{size\\})", "t500x500");
+        imgUrl = imgUrl.replaceAll("(\\{size\\})", "t250x250");
 
         XposedBridge.log("[SoundCloud Downloader] Track name: " + name);
         XposedBridge.log("[SoundCloud Downloader] Image url: " + imgUrl);
 
         if (XposedMod.urlBuilder != null && urn != null) {
             String url = (String) XposedHelpers.callMethod(XposedMod.urlBuilder, "a", new Class[]{XposedHelpers.findClass("dht", classLoader)}, urn);
-            DownloadPayload downloadPayload = Downloader.buildDownloadPayload(url, name, imgUrl, artistName, genre); //todo return value can be null
+            DownloadPayload downloadPayload = Downloader.buildDownloadPayload(url, name, imgUrl, artistName, genre);
             if (downloadPayload == null) return;
             Downloader.download(downloadPayload);
         } else {
