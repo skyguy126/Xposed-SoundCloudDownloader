@@ -53,6 +53,8 @@ public class MetadataInjector extends BroadcastReceiver {
                     Tag tag = audioFile.getTagOrCreateAndSetDefault();
                     tag.setField(FieldKey.ARTIST,downloadPayload.getArtistName());
                     tag.setField(FieldKey.GENRE, downloadPayload.getGenre());
+                    tag.setField(FieldKey.TITLE, downloadPayload.getTitle());
+                    tag.setField(FieldKey.ALBUM, downloadPayload.getTitle());
 
                     ByteArrayOutputStream imgStream = new ByteArrayOutputStream();
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 90, imgStream);

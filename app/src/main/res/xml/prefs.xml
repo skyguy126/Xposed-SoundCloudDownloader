@@ -19,7 +19,7 @@
 
         <CheckBoxPreference
             android:key="include_metadata"
-            android:title="Include Metadata"
+            android:title="Experimental: Include Metadata"
             android:summary="Package album art, artist, and genre in file"
             android:defaultValue="false"/>
 
