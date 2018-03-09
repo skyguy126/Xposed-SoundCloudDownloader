@@ -87,7 +87,7 @@ public class Downloader {
         XposedBridge.log("[SoundCloud Downloader] " + Shared.PACKAGE_NAME + " " + Shared.PREFS_FILE_NAME);
 
         XSharedPreferences prefs = new XSharedPreferences(Shared.PACKAGE_NAME, Shared.PREFS_FILE_NAME);
-        boolean includeMetadata = prefs.getBoolean(Shared.PREFS_METADATA_KEY, false);
+        boolean includeMetadata = prefs.getBoolean(Shared.PREFS_METADATA_KEY, false) && (genre != null) && (imgUrl != null);
         String saveLocationString = prefs.getString(Shared.PREFS_SPINNER_KEY, "-1");
         int saveLocation = Integer.parseInt(saveLocationString);
 

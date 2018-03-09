@@ -38,17 +38,24 @@ public class DownloadCatcher extends XC_MethodHook {
 
         Object urn = XposedHelpers.callMethod(track, "getUrn");
         String name = (String) XposedHelpers.callMethod(track, "n");
-
         String artistName = (String) XposedHelpers.callMethod(track, "p");
-        Object optionalGenre = XposedHelpers.callMethod(track, "m");
-        String genre = (String) XposedHelpers.callMethod(optionalGenre, "c");
-
-        Object optionalImg = XposedHelpers.callMethod(track, "getImageUrlTemplate");
-        String imgUrl = (String) XposedHelpers.callMethod(optionalImg, "c");
-        imgUrl = imgUrl.replaceAll("(\\{size\\})", "t250x250");
 
         XposedBridge.log("[SoundCloud Downloader] Track name: " + name);
-        XposedBridge.log("[SoundCloud Downloader] Image url: " + imgUrl);
+
+        String genre = null;
+        Object optionalGenre = XposedHelpers.callMethod(track, "m");
+        if ((boolean) XposedHelpers.callMethod(optionalGenre, "b")) {
+            XposedBridge.log("[SoundCloud Downloader] Found genre data...");
+            genre = (String) XposedHelpers.callMethod(optionalGenre, "c");
+        }
+
+        String imgUrl = null;
+        Object optionalImg = XposedHelpers.callMethod(track, "getImageUrlTemplate");
+        if ((boolean) XposedHelpers.callMethod(optionalImg, "b")) {
+            imgUrl = (String) XposedHelpers.callMethod(optionalImg, "c");
+            imgUrl = imgUrl.replaceAll("(\\{size\\})", "t250x250");
+            XposedBridge.log("[SoundCloud Downloader] Image url: " + imgUrl);
+        }
 
         if (XposedMod.urlBuilder != null && urn != null) {
             String url = (String) XposedHelpers.callMethod(XposedMod.urlBuilder, "a", new Class[]{XposedHelpers.findClass("dhj", classLoader)}, urn);
