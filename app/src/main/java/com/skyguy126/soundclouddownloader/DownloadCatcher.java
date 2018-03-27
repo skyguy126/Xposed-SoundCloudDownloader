@@ -26,14 +26,14 @@ public class DownloadCatcher extends XC_MethodHook {
         String currentClassName = param.thisObject.getClass().getName();
         Object track;
 
-        // if: TrackPageMenuController -> exm, we need to get TrackItem -> hgt
-        // else: TrackItemMenuPresenter -> hgv, already is TrackItem -> hgt
-        if (currentClassName.equals("exm")) {
+        // if: TrackPageMenuController -> fbu, we need to get TrackItem -> hlt
+        // else: TrackItemMenuPresenter -> hlu, already is TrackItem -> hlt
+        if (currentClassName.equals("fbu")) {
             Object playerTrackState = XposedHelpers.getObjectField(param.thisObject, "l"); // PlayerTrackState -> ewk
             Object optionalTrackItem = XposedHelpers.callMethod(playerTrackState, "a"); // Optional -> hxg
-            track = XposedHelpers.callMethod(optionalTrackItem, "c"); // TrackItem -> hgt
+            track = XposedHelpers.callMethod(optionalTrackItem, "c"); // TrackItem -> hlt
         } else {
-            track = XposedHelpers.getObjectField(param.thisObject, "r"); // TrackItem -> hgt
+            track = XposedHelpers.getObjectField(param.thisObject, "r"); // TrackItem -> hlt
         }
 
         Object urn = XposedHelpers.callMethod(track, "getUrn");
@@ -58,7 +58,7 @@ public class DownloadCatcher extends XC_MethodHook {
         }
 
         if (XposedMod.urlBuilder != null && urn != null) {
-            String url = (String) XposedHelpers.callMethod(XposedMod.urlBuilder, "a", new Class[]{XposedHelpers.findClass("dhj", classLoader)}, urn);
+            String url = (String) XposedHelpers.callMethod(XposedMod.urlBuilder, "a", new Class[]{XposedHelpers.findClass("dlb", classLoader)}, urn);
             DownloadPayload downloadPayload = Downloader.buildDownloadPayload(url, name, imgUrl, artistName, genre);
             if (downloadPayload == null) return;
             Downloader.download(downloadPayload);
