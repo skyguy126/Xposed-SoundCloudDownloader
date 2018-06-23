@@ -26,19 +26,19 @@ public class DownloadCatcher extends XC_MethodHook {
         String currentClassName = param.thisObject.getClass().getName();
         Object track;
 
-        // if: TrackPageMenuController -> fbu, we need to get TrackItem -> hlt
+        // if: TrackPageMenuController -> ftg, we need to get TrackItem -> hlt
         // else: TrackItemMenuPresenter -> hlu, already is TrackItem -> hlt
-        if (currentClassName.equals("fbu")) {
-            Object playerTrackState = XposedHelpers.getObjectField(param.thisObject, "l"); // PlayerTrackState -> ewk
-            Object optionalTrackItem = XposedHelpers.callMethod(playerTrackState, "a"); // Optional -> hxg
-            track = XposedHelpers.callMethod(optionalTrackItem, "c"); // TrackItem -> hlt
+        if (currentClassName.equals("ftg")) {
+            Object playerTrackState = XposedHelpers.getObjectField(param.thisObject, "n"); // PlayerTrackState -> fse
+            Object optionalTrackItem = XposedHelpers.callMethod(playerTrackState, "a"); // Optional -> irt
+            track = XposedHelpers.callMethod(optionalTrackItem, "c"); // TrackItem -> icw
         } else {
-            track = XposedHelpers.getObjectField(param.thisObject, "r"); // TrackItem -> hlt
+            track = XposedHelpers.getObjectField(param.thisObject, "r"); // TrackItem -> icw
         }
 
-        Object urn = XposedHelpers.callMethod(track, "getUrn");
-        String name = (String) XposedHelpers.callMethod(track, "n");
-        String artistName = (String) XposedHelpers.callMethod(track, "p");
+        Object urn = XposedHelpers.callMethod(track, "getUrn"); // Call on TrackItem
+        String name = (String) XposedHelpers.callMethod(track, "n"); // title()
+        String artistName = (String) XposedHelpers.callMethod(track, "p"); // creatorName()
 
         XposedBridge.log("[SoundCloud Downloader] Track name: " + name);
 
@@ -58,7 +58,8 @@ public class DownloadCatcher extends XC_MethodHook {
         }
 
         if (XposedMod.urlBuilder != null && urn != null) {
-            String url = (String) XposedHelpers.callMethod(XposedMod.urlBuilder, "a", new Class[]{XposedHelpers.findClass("dlb", classLoader)}, urn);
+            // StreamUrlBuilder - buildHttpsStreamUrl()
+            String url = (String) XposedHelpers.callMethod(XposedMod.urlBuilder, "a", new Class[]{XposedHelpers.findClass("eah", classLoader)}, urn);
             DownloadPayload downloadPayload = Downloader.buildDownloadPayload(url, name, imgUrl, artistName, genre);
             if (downloadPayload == null) return;
             Downloader.download(downloadPayload);
