@@ -16,6 +16,8 @@ This project is licensed under the GNU GPLv3, which can be found in the LICENSE 
 
 *In no event shall the author of this Software be liable for any special, consequential. incidental or indirect damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss of business information, or any other pecuniary loss) arising out of the use of or inability to use this product. even if the Author of this Software is aware of the possibility of such damages and known defects.*
 
+*This module is being developed for educational purposes only.*
+
 ### Dependencies
 - [Picasso](http://square.github.io/picasso/)
 - [JAudioTagger-Android](https://github.com/maxbruecken/jaudiotagger-android)
