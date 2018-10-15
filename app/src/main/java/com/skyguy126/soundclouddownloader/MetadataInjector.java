@@ -38,6 +38,7 @@ public class MetadataInjector extends BroadcastReceiver {
         context.unregisterReceiver(this);
 
         XposedBridge.log("[SoundCloud Downloader] Unregistered receiver, starting Picasso...");
+        Picasso.with(XposedMod.currentActivity).setLoggingEnabled(true); // enable logging to see why picasso fails to load
         Picasso.with(XposedMod.currentActivity).load(downloadPayload.getImageUrl()).into(new Target() {
             @Override
             public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {

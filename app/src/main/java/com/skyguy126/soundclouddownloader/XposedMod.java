@@ -17,6 +17,11 @@ public class XposedMod implements IXposedHookLoadPackage {
     public static volatile Activity currentActivity;
     public static volatile Object urlBuilder;
 
+    // Hook definitions
+    public static String streamUrlBuilderHook = "fnf";
+    public static String trackPageMenuControllerHook = "gba";
+    public static String trackItemMenuPresenterHook = "idj";
+
     private static void addDownloadItem(Object popupMenuWrapper) {
         Object popupMenu = XposedHelpers.getObjectField(popupMenuWrapper, "a");
         Object menu = XposedHelpers.callMethod(popupMenu, "getMenu");
@@ -26,10 +31,15 @@ public class XposedMod implements IXposedHookLoadPackage {
     @Override
     public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
 
+        // hacky way to add missing permissions to manifest
+        if (lpparam.packageName.equals("android") && lpparam.processName.equals("android"))
+            PermGrant.initPerms(lpparam.classLoader);
+
+        // main module check
         if (!lpparam.packageName.equals("com.soundcloud.android"))
             return;
 
-        XposedBridge.log("[SoundCloud Downloader] Module entry, version " + BuildConfig.VERSION_NAME);
+        XposedBridge.log("[SoundCloud Downloader] Module Entry, SCD Version: " + BuildConfig.VERSION_NAME);
         DownloadCatcher downloadCatcher = new DownloadCatcher(lpparam.classLoader);
 
         try {
@@ -41,24 +51,24 @@ public class XposedMod implements IXposedHookLoadPackage {
                 }
             });
 
-            // StreamUrlBuilder - constructor
-            XposedHelpers.findAndHookConstructor("fgb", lpparam.classLoader, XposedHelpers.findClass("bmw", lpparam.classLoader), XposedHelpers.findClass("cer", lpparam.classLoader), new XC_MethodHook() {
+            // (HOOK) StreamUrlBuilder - constructor
+            XposedHelpers.findAndHookConstructor(XposedMod.streamUrlBuilderHook, lpparam.classLoader, XposedHelpers.findClass("bot", lpparam.classLoader), XposedHelpers.findClass("che", lpparam.classLoader), new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                     XposedMod.urlBuilder = param.thisObject;
                 }
             });
 
-            // TrackPageMenuController - setupMenu() [Object field - popupMenuWrapper]
-            XposedHelpers.findAndHookMethod("fti", lpparam.classLoader, "g", new XC_MethodHook() {
+            // (HOOK) TrackPageMenuController - setupMenu() [Object field - popupMenuWrapper]
+            XposedHelpers.findAndHookMethod(XposedMod.trackPageMenuControllerHook, lpparam.classLoader, "g", new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                     XposedMod.addDownloadItem(XposedHelpers.getObjectField(param.thisObject, "b"));
                 }
             });
 
-            // TrackItemMenuPresenter - createAndShowMenu()
-            XposedHelpers.findAndHookMethod("ico", lpparam.classLoader, "a", android.view.View.class, new XC_MethodReplacement() {
+            // (HOOK) TrackItemMenuPresenter - createAndShowMenu()
+            XposedHelpers.findAndHookMethod(XposedMod.trackItemMenuPresenterHook, lpparam.classLoader, "a", android.view.View.class, new XC_MethodReplacement() {
                 @Override
                 protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
                     View view = (View) param.args[0];
@@ -94,11 +104,11 @@ public class XposedMod implements IXposedHookLoadPackage {
                 }
             });
 
-            // TrackPageMenuController - onMenuItemClick()
-            XposedHelpers.findAndHookMethod("fti", lpparam.classLoader, "a", android.view.MenuItem.class, android.content.Context.class, downloadCatcher);
+            // (HOOK) TrackPageMenuController - onMenuItemClick()
+            XposedHelpers.findAndHookMethod(XposedMod.trackPageMenuControllerHook, lpparam.classLoader, "a", android.view.MenuItem.class, android.content.Context.class, downloadCatcher);
 
-            // TrackItemMenuPresenter - onMenuItemClick()
-            XposedHelpers.findAndHookMethod("ico", lpparam.classLoader, "a", android.view.MenuItem.class, android.content.Context.class, downloadCatcher);
+            // (HOOK) TrackItemMenuPresenter - onMenuItemClick()
+            XposedHelpers.findAndHookMethod(XposedMod.trackItemMenuPresenterHook, lpparam.classLoader, "a", android.view.MenuItem.class, android.content.Context.class, downloadCatcher);
 
         } catch (Throwable t) {
             XposedBridge.log("[SoundCloud Downloader] Error: " + t.getMessage());
