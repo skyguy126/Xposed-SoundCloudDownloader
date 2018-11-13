@@ -12,7 +12,8 @@ public class DownloadPayload {
     private String imageUrl;
     private boolean includeMetadata;
 
-    public DownloadPayload(String url, String fileName, File saveDirectory, String title, String artistName, String genre, String imageUrl, boolean includeMetadata) {
+    public DownloadPayload(String url, String fileName, File saveDirectory, String title,
+                           String artistName, String genre, String imageUrl, boolean includeMetadata) {
         this.url = url;
         this.fileName = fileName;
         this.saveDirectory = saveDirectory;

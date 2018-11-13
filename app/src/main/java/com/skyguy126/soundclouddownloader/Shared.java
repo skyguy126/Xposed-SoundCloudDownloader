@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -55,17 +54,17 @@ public class Shared {
 
     public static boolean validatePermissions(final Activity activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            if (activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED) {
                 return true;
             } else {
                 AlertDialog.Builder alert = new AlertDialog.Builder(activity);
                 alert.setTitle("Permission Error");
                 alert.setMessage("Grant permissions in the next dialog and retry download.");
-                alert.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        dialog.dismiss();
-                        ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-                    }
+                alert.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
+                    dialog.dismiss();
+                    ActivityCompat.requestPermissions(activity, new String[]{
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
                 });
                 alert.show();
                 return false;

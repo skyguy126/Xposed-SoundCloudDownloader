@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -23,17 +22,20 @@ public class Downloader {
 
     private static boolean validatePermissions(final Activity activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED && activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            if (activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED
+                    && activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED) {
                 return true;
             } else {
                 AlertDialog.Builder alert = new AlertDialog.Builder(activity);
                 alert.setTitle("Permission Error");
                 alert.setMessage("Grant permissions in the next dialog and retry download.");
-                alert.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        dialog.dismiss();
-                        ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
-                    }
+                alert.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
+                    dialog.dismiss();
+                    ActivityCompat.requestPermissions(activity, new String[]{
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                            Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
                 });
                 alert.show();
                 return false;
@@ -88,7 +90,9 @@ public class Downloader {
         XposedBridge.log("[SoundCloud Downloader] " + Shared.PACKAGE_NAME + " " + Shared.PREFS_FILE_NAME);
 
         XSharedPreferences prefs = new XSharedPreferences(Shared.PACKAGE_NAME, Shared.PREFS_FILE_NAME);
-        boolean includeMetadata = prefs.getBoolean(Shared.PREFS_METADATA_KEY, false) && (genre != null) && (imgUrl != null);
+        boolean includeMetadata = prefs.getBoolean(Shared.PREFS_METADATA_KEY, false)
+                && (genre != null)
+                && (imgUrl != null);
         String saveLocationString = prefs.getString(Shared.PREFS_SPINNER_KEY, "-1");
         int saveLocation = Integer.parseInt(saveLocationString);
 
@@ -99,7 +103,7 @@ public class Downloader {
             saveDirectory = Environment.getExternalStorageDirectory();
         } else if (saveLocation == 1) {
             saveDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-        } else if (saveLocation == 2){
+        } else if (saveLocation == 2) {
             saveDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
         } else {
             saveDirectory = new File(prefs.getString(Shared.PREFS_SAVE_PATH_KEY, Shared.CUSTOM_PATH_DEFAULT));

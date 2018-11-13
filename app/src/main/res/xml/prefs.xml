@@ -1,32 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <PreferenceCategory
-        android:title="Settings">
+    <PreferenceCategory android:title="Settings">
 
         <CheckBoxPreference
+            android:defaultValue="true"
             android:key="disp_launcher_icon_checkbox"
-            android:title="Display Launcher Icon"
             android:summary="Show the app icon on the homescreen"
-            android:defaultValue="true"/>
+            android:title="Display Launcher Icon" />
 
         <ListPreference
-            android:key="save_loc_spinner"
-            android:title="Save Location"
-            android:summary="Save location for downloaded songs"
+            android:defaultValue="1"
             android:entries="@array/save_loc_spinner_strings"
             android:entryValues="@array/save_loc_spinner_values"
-            android:defaultValue="1"/>
+            android:key="save_loc_spinner"
+            android:summary="Save location for downloaded songs"
+            android:title="Save Location" />
 
         <CheckBoxPreference
+            android:defaultValue="false"
             android:key="include_metadata"
-            android:title="Experimental: Include Metadata"
             android:summary="Package album art, artist, and genre in file"
-            android:defaultValue="false"/>
+            android:title="Experimental: Include Metadata" />
 
         <Preference
             android:key="source_button"
-            android:title="Source"
-            android:summary="Open GitHub (developed by skyguy126 and stirante)"/>
+            android:summary="Open GitHub (developed by skyguy126 and stirante)"
+            android:title="Source" />
 
     </PreferenceCategory>
 </PreferenceScreen>

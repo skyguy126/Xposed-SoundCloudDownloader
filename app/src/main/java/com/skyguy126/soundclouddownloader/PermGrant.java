@@ -1,12 +1,12 @@
 package com.skyguy126.soundclouddownloader;
 
+import android.Manifest;
+
 import java.util.List;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
-
-import android.Manifest;
 
 // Help from - https://github.com/Lawiusz/xposed_lockscreen_visualizer/blob/master/app/src/main/java/pl/lawiusz/lockscreenvisualizerxposed/PermGrant.java
 
