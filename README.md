@@ -1,6 +1,8 @@
 # Xposed-SoundCloudDownloader
 *Download songs directly from the SoundCloud app.*
 
+## This module is no longer being maintained. Please contact me if you would like to take over and push some much needed updates.
+
 ![logo.png](app/src/main/ic_launcher-web.png)
 
 Based on [this](http://pastebin.com/vH9phDJJ) program by **/u/stirante** from [this](https://www.reddit.com/r/xposed/comments/4cb1g3/request_xposed_download_button_for_soundcloud/) Reddit thread.
